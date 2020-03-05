@@ -10,10 +10,11 @@ import Settings from "./components/Settings";
 function App() {
 
   let [brut, setBrut] = useState("");  
-
-  let hbrut, hnet, annuelbrut, annuelnet;
+  let [status , setStatus] = useState("salarié");
+  let hbrut, hnet = 0 ;
 
   hbrut=0;
+
   let donnéesEntrée = {
     "contrat salarié . rémunération . brut de base": brut,
     "contrat salarié . statut cadre" : status,
@@ -46,7 +47,7 @@ function App() {
   };
 
   /* Variable lié au status */
-  let [status , setStatus] = useState("salarié");
+  
   let choixStatus = ["salarié" , "salarié cadre" ,"fonction public", "indépendant" , "portage salarial"];
   let mapStatus = {'salarié':'Non-cadre'  , "salarié cadre":"Cadre" , "fonction public" : "Public" , "indépendant" : "Indé" , "portage salarial":"Port"};
   let valstatus = mapStatus[status];
