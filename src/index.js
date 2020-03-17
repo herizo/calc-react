@@ -21,24 +21,25 @@ function App() {
     "impôt . méthode de calcul" : "barème standard"
   };
 
+  let status_contrat = "contrat salarié";
 
   /*let netimpot = Lib.evaluate("contrat salarié . rémunération . net après impôt" , donnéesEntrée);
   let smic = Lib.evaluate("contrat salarié . SMIC");*/
+  var [net, setNet] = useState(Math.round(Lib.evaluate(status_contrat+" . rémunération . net après impôt", donnéesEntrée)));
 
-  var net = Math.round(Lib.evaluate("contrat salarié . rémunération . net après impôt", donnéesEntrée));
-  /*let setNet = function (value ) {
-    net = value*-1;
-    let newBrut = Math.round(Lib.evaluate("contrat salarié . rémunération . brut de base . équivalent temps plein", datacalcul)));
-    setBrut( newBrut);
-  }*/
+  /* taux horaire pour l'individu */
+
+  let [taux_horaire,setTauxHoraire] = useState(Math.round(Lib.evaluate("contrat salarié . temps de travail" , donnéesEntrée)));
+
+
   let salaire = {
-    "horaire" : { "brut" : hbrut  , "net" : hnet ,
-      "setBrut" : (e) => ( hbrut = Math.round(e.target.value) ),
+    "horaire" : { "brut" : Math.round(brut/taux_horaire) , "net" : Math.round(net/taux_horaire) ,
+      "setBrut" : (e) => ( setBrut(Math.round(e.target.value*taux_horaire)) ),
       "setNet"  : (e) => ( hnet  = Math.round(e.target.value) )
     },
     "mensuel" : {"brut" : brut  , "net" : net  ,
       "setBrut" : (e) => ( setBrut(Math.round(e.target.value)) ),
-      //"setNet"  : (e) => ( setNet(e.target.value) ) 
+      "setNet"  : (e) => ( setNet(e.target.value) )
     },
     "annuel"  : {"brut" : brut*12  , "net" : net*12 ,
       "setBrut" : (e) => ( setBrut( e.target.value/12 )),
@@ -54,7 +55,6 @@ function App() {
 
   /**/
   let options = new Object({});
-  let heure_de_travail, set_heure_de_travail = useState("");
   options["moisPrimeOpt"] =  {"12 mois":12 , "13 mois" : 13 , "14 mois" : 14 , "15 mois" : 15 , "16 mois" : 16};
   let [workHour , setWorkHour] = useState(100);
   let [tauxPrelevement , setTauxPrelevement] = useState(0);
@@ -62,14 +62,13 @@ function App() {
 
   /* Modification de la formule de calcule selon l'entrée de l'utilisateur */
 
-
   return (
   <div className="App">
     <div className = "entree-salaire">
-      <span id="status-travailleur">{valstatus}</span>
+      <span id="status-travailleur" > {valstatus}</span>
 
-      <BrutVersNet salaire = {salaire} setBrut ={setBrut}/>
-      <Status choixStatus = {choixStatus} setStatus={setStatus} />
+      <BrutVersNet salaire = {salaire} />
+      <Status choixStatus = {choixStatus} setStatus={setStatus}/>
     </div>
     <div className = "options">
       <Settings salaire= {salaire} options={options} workHour={workHour} setWorkHour = {setWorkHour} tauxPrelevement = {tauxPrelevement} setTauxPrelevement={setTauxPrelevement}/>
