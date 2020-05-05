@@ -43,8 +43,6 @@ function App() {
 
     let salaire_brut  = Math.round (Lib.evaluate(status_contrat+" . rémunération . brut de base", calcData));
 
-    console.log( "salairebrut calculer : "+ salaire_brut);
-
     return setToInteger(salaire_brut) ;
   };
 
@@ -57,49 +55,44 @@ function App() {
 
     let salaire_net = Math.round(Lib.evaluate(status_contrat + " . rémunération . net après impôt", calcData));
 
-    console.log(  "salaire brut : "+ brut +",salaire net calculer : " + salaire_net);
-
     return setToInteger(salaire_net);
   };
 
+  var update_value = function (variable , value) {
+    if (variable == "brut" ){
+      setBrut( setToInteger(value))
+      setNet ( calcul_net(setToInteger(value)) );
+  
+    }
+    else if (variable == "net"){
+      setNet ( setToInteger(value));
+      setBrut( calcul_brut(setToInteger(value)) );
+    }
+  }
   
   /*let netimpot = Lib.evaluate("contrat salarié . rémunération . net après impôt" , donnéesEntrée);
   let smic = Lib.evaluate("contrat salarié . SMIC");*/
   var [net, setNet] = useState( 0 );
-
-  useEffect(
-    ()=>(
-      setNet(calcul_net(brut))
-    )
-  );
-  
   /* taux horaire pour l'individu */
   let [taux_horaire,setTauxHoraire] = useState(Math.round(Lib.evaluate("contrat salarié . temps de travail" , donnéesEntrée)));
 
-  
-
-
   let salaire = {
     "horaire" : { "brut" : Math.round(brut/taux_horaire) , "net" : Math.round(net/taux_horaire) ,
-      "setBrut" : (e) => (
-          setBrut( setToInteger(e.target.value*taux_horaire) )
-        ),
-      "setNet"  : (e) => ( hnet = Math.round(e.target.value) )
+      "setBrut" : (e) => (update_value("brut",e.target.value*taux_horaire) ),
+      "setNet"  : (e) => (update_value("net" , e.target.value*taux_horaire) )
     },
+
     "mensuel" : {"brut" : brut  , "net" : net  ,
-      "setBrut" : (e) => (
-        setBrut( setToInteger(e.target.value)) 
-      ),
-      "setNet"  : (e) => ( setNet(e.target.value) )
+      "setBrut" : (e) => ( update_value("brut", e.target.value) ),
+      "setNet"  : (e) => ( update_value("net" , e.target.value) )
     },
 
     "annuel"  : {"brut" : brut*12  , "net" : net*12 ,
-      "setBrut" : (e) => ( setBrut( setToInteger( e.target.value/12) )),
-      "setNet"  : function (e) { net = e.target.value/12 ; setBrut(0); }
+      "setBrut" : (e) => ( update_value("brut" , e.target.value/12) ),
+      "setNet"  : (e) => ( update_value("net" , e.target.value/12)  )
     }
 
   };
-
 
   /* Variable lié au status */
   
