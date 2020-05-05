@@ -19,7 +19,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "homepage" : "http://www.ivoyages.net/calculateurbuild/",
+  "homepage": "http://www.ivoyages.net/calculateurbuild/",
   "browserslist": [
     ">0.2%",
     "not dead",

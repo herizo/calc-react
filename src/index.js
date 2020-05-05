@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState , useEffect } from "react";
 import Lib from "mon-entreprise";
 import ReactDOM from "react-dom";
 import './style.css';
@@ -7,10 +7,21 @@ import Status from "./components/Status" ;
 import Settings from "./components/Settings";
 
 
+function setToInteger(val) {
+  if (isNaN(val)) {
+    console.log("not int");
+    return 0 ;
+  }
+  val= (Math.round(val) < 0 ) ? 0 : Math.round(val);
+  return val;
+}
+
 function App() {
 
-  let [brut, setBrut] = useState("");  
+  let [brut, setBrut] = useState("");
+
   let [status , setStatus] = useState("salarié");
+
   let hbrut, hnet = 0 ;
 
   hbrut=0;
@@ -21,31 +32,74 @@ function App() {
     "impôt . méthode de calcul" : "barème standard"
   };
 
-  let status_contrat = "contrat salarié";
+  var status_contrat = "contrat salarié";
+  /**/
+  var calcul_brut = function (net) {
+    /* Calcul valeur de salaire brut a partir du salaire net (valeur mensuel)*/
+    let calcData  = {
+      "contrat salarié . statut cadre": status,
+      "contrat salarié . rémunération . net" : net,
+    };
 
+    let salaire_brut  = Math.round (Lib.evaluate(status_contrat+" . rémunération . brut de base", calcData));
+
+    console.log( "salairebrut calculer : "+ salaire_brut);
+
+    return setToInteger(salaire_brut) ;
+  };
+
+  var calcul_net = function (brut){
+    /* Calcul valeur salaire net a partir du salaire brut (valeur mensuel)*/
+    let calcData = {
+      "contrat salarié . statut cadre": status,
+      "contrat salarié . rémunération . brut de base": brut,
+    };
+
+    let salaire_net = Math.round(Lib.evaluate(status_contrat + " . rémunération . net après impôt", calcData));
+
+    console.log(  "salaire brut : "+ brut +",salaire net calculer : " + salaire_net);
+
+    return setToInteger(salaire_net);
+  };
+
+  
   /*let netimpot = Lib.evaluate("contrat salarié . rémunération . net après impôt" , donnéesEntrée);
   let smic = Lib.evaluate("contrat salarié . SMIC");*/
-  var [net, setNet] = useState(Math.round(Lib.evaluate(status_contrat+" . rémunération . net après impôt", donnéesEntrée)));
+  var [net, setNet] = useState( 0 );
 
+  useEffect(
+    ()=>(
+      setNet(calcul_net(brut))
+    )
+  );
+  
   /* taux horaire pour l'individu */
-
   let [taux_horaire,setTauxHoraire] = useState(Math.round(Lib.evaluate("contrat salarié . temps de travail" , donnéesEntrée)));
+
+  
 
 
   let salaire = {
     "horaire" : { "brut" : Math.round(brut/taux_horaire) , "net" : Math.round(net/taux_horaire) ,
-      "setBrut" : (e) => ( setBrut(Math.round(e.target.value*taux_horaire)) ),
-      "setNet"  : (e) => ( hnet  = Math.round(e.target.value) )
+      "setBrut" : (e) => (
+          setBrut( setToInteger(e.target.value*taux_horaire) )
+        ),
+      "setNet"  : (e) => ( hnet = Math.round(e.target.value) )
     },
     "mensuel" : {"brut" : brut  , "net" : net  ,
-      "setBrut" : (e) => ( setBrut(Math.round(e.target.value)) ),
+      "setBrut" : (e) => (
+        setBrut( setToInteger(e.target.value)) 
+      ),
       "setNet"  : (e) => ( setNet(e.target.value) )
     },
+
     "annuel"  : {"brut" : brut*12  , "net" : net*12 ,
-      "setBrut" : (e) => ( setBrut( e.target.value/12 )),
-      "setNet"  : (e) => ( net =e.target.value/12 )
+      "setBrut" : (e) => ( setBrut( setToInteger( e.target.value/12) )),
+      "setNet"  : function (e) { net = e.target.value/12 ; setBrut(0); }
     }
+
   };
+
 
   /* Variable lié au status */
   
@@ -59,14 +113,12 @@ function App() {
   let [workHour , setWorkHour] = useState(100);
   let [tauxPrelevement , setTauxPrelevement] = useState(0);
 
-
   /* Modification de la formule de calcule selon l'entrée de l'utilisateur */
 
   return (
   <div className="App">
     <div className = "entree-salaire">
       <span id="status-travailleur" > {valstatus}</span>
-
       <BrutVersNet salaire = {salaire} />
       <Status choixStatus = {choixStatus} setStatus={setStatus}/>
     </div>
