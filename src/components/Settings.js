@@ -7,8 +7,8 @@ class Settings extends Component {
 		return(
     <div> 
       <div className="options-input">
-        <label> Temp de travail {this.props.workHour} %</label>
-				<input id="heure-travail" type="range"  list="tickmarks" value={this.props.workHour} onChange = {(e)=> ( this.props.setWorkHour (e.target.value) )} />
+        <label> Temp de travail {this.props.workHour*10} %</label>
+				<input id="heure-travail" type="range" min="1" max="10" list="tickmarks" value={this.props.workHour} onChange = {(e)=> ( this.props.setWorkHour (e.target.value) )} />
           <datalist id="tickmarks">
             <option value="0" label="0%"></option>
             <option value="10"></option>
