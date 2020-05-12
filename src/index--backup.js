@@ -7,16 +7,16 @@ import Status from "./components/Status" ;
 import Settings from "./components/Settings";
 
 function setToInteger(val) {
-  if (isNaN(val)) {;
+  if (isNaN(val)) {
     return 0 ;
+
   }
   val= (Math.ceil(val) < 0 ) ? 0 : Math.ceil(val);
   return val;
 }
 
-function floorAt(val){
-  return Number( val.toFixed(2));
-  
+function floorAt(inp , floor){
+  return inp-(inp%floor);
 }
 
 function App() {
@@ -25,13 +25,9 @@ function App() {
 
   let [status , setStatus] = useState("salarié");
 
-  let [tauxPrelevement , setTauxPrelevement ] = useState(0.0);
+  let hbrut, hnet = 0 ;
 
-  var [net, setNet] = useState( 0 );
-
-  let [netApImpot , setNetApImpot ] = useState(0);
-
-  let [taux_reduction , setTauxReduction] = useState(22) ; // salarié non cadre par defaut
+  hbrut=0;
 
   let [statut_cadre, setStatutCadre] = useState("non");
 
@@ -40,29 +36,28 @@ function App() {
     function (){
       if (status == "salarié cadre" ) {
         // si le statut est salarie cadre.
-        setTauxReduction(25); // -25%
+        setStatutCadre("oui");
         setNet(calcul_net(brut));
+        let taux = -25; // -25%
       }
       else if (status == "salarié") {
         // si le statut est simple salarié.
-        setTauxReduction(22); // -22%
+        setStatutCadre("non");
         setNet(calcul_net(brut));
+        let taux = -22; // -22%
       }
       else if (status == "fonction public"){
         // si le statut est fonctionnaire.
-        setTauxReduction(15); // -15%
-        setNet(calcul_net(brut));
+        let taux = -15; // -15%
 
       }
-      else if (status == "Proféssion Libérale"){
+      else if (status == "indépendant"){
         // si le statut est independant.
-        setTauxReduction(45); // -45%
-        setNet(calcul_net(brut));
+        let taux = -45; // -45%
       }
       else if (status == "portage salarial"){
         // si le statut est en portage salarial.
-        setTauxReduction(51); // -51%
-        setNet(calcul_net(brut));
+        let taux = -51; // -51%
       }
 
     }
@@ -79,22 +74,26 @@ function App() {
   /**/
   var calcul_brut = function (net) {
     /* Calcul valeur de salaire brut a partir du salaire net (valeur mensuel)*/
-    let salaire_brut  = (net * 100) / (100 - taux_reduction);
+    let calcData  = {
+      "contrat salarié . statut cadre": statut_cadre,
+      "contrat salarié . rémunération . net" : net,
+    };
+    let salaire_brut  = Math.round (Lib.evaluate(status_contrat+" . rémunération . brut de base", calcData));
+
     return setToInteger(salaire_brut) ;
   };
 
   var calcul_net = function (brut){
     /* Calcul valeur salaire net a partir du salaire brut (valeur mensuel)*/
-    console.log(workHour);
-    let salaire_net = brut - ( (brut * taux_reduction)/ 100);
+    let calcData = {
+      "contrat salarié . statut cadre": statut_cadre,
+      "contrat salarié . rémunération . brut de base": brut,
+    };
+
+    let salaire_net = Math.round(Lib.evaluate(status_contrat + " . rémunération . net", calcData));
+
     return setToInteger(salaire_net);
   };
-  
-  var calcul_taux_prelevement  = function (){
-    let taux= 0 ;
-    return taux ;
-  };
-
 
   var update_value = function (variable , value) {
     if (variable == "brut" ){
@@ -105,37 +104,18 @@ function App() {
       setNet ( setToInteger(value));
       setBrut( calcul_brut(setToInteger(value)) );
     }
-    setTauxPrelevement(calcul_taux_prelevement());
   }
-
-
+  
+  /*let netimpot = Lib.evaluate("contrat salarié . rémunération . net après impôt" , donnéesEntrée);
+  let smic = Lib.evaluate("contrat salarié . SMIC");*/
+  var [net, setNet] = useState( 0 );
   /* taux horaire pour l'individu */
-  let [taux_horaire_base,setTauxHoraireBase] = useState(Math.round(
-    Lib.evaluate("contrat salarié . temps de travail" , donnéesEntrée)
-  ));
-  
-
-  let [workHour , setWorkHour] = useState(10);
-  let [taux_horaire,setTauxHoraire] = useState(Math.round((taux_horaire_base*(workHour*10))/100 ));
-
-  
+  let [taux_horaire,setTauxHoraire] = useState(Math.round(Lib.evaluate("contrat salarié . temps de travail" , donnéesEntrée)));
 
   let salaire = {
-    "horaire" : { 
-      "brut" : floorAt( brut / taux_horaire) ,
-      "net"  : floorAt( net  / taux_horaire) ,
-      "setBrut" : (e) => ( 
-        update_value(
-          "brut",
-          (e.target.value*taux_horaire)
-        ) 
-      ),
-      "setNet"  : (e) => (
-        update_value(
-          "net" ,
-          (e.target.value*taux_horaire)
-        )
-      )
+    "horaire" : { "brut" : floorAt(brut/taux_horaire , 0.01) ,"net" : floorAt(net/taux_horaire ,0.01),
+      "setBrut" : (e) => (update_value("brut",e.target.value*taux_horaire) ),
+      "setNet"  : (e) => (update_value("net" ,e.target.value*taux_horaire) )
     },
 
     "mensuel" : {"brut" : brut  , "net" : net  ,
@@ -155,7 +135,7 @@ function App() {
     "salarié" ,
     "salarié cadre" ,
     "fonction public",
-    "Proféssion Libérale" ,
+    "indépendant" ,
     "portage salarial"
   ];
 
@@ -163,7 +143,7 @@ function App() {
     "salarié":"Non-cadre", 
     "salarié cadre":"Cadre",
     "fonction public" :"Public",
-    "Proféssion Libérale":"Indé",
+    "indépendant":"Indé",
     "portage salarial":"Port"
   };
 
@@ -171,47 +151,21 @@ function App() {
 
   /* */
   let options = new Object({});
-  options["moisPrimeOpt"] ={
-    "12 mois":12 ,
-    "13 mois":13 ,
-    "14 mois":14 ,
-    "15 mois":15 ,
-    "16 mois":16
-  };
-  
-  let modificationTauxHoraire = function (newWorkHour) {
-    let montantBrutHeure = salaire.horaire.brut ;
-    // Taux horaire 100 %  =  152 ;
-    
-
-    setWorkHour(newWorkHour);
-    setTauxHoraire(Math.round((taux_horaire_base*(workHour*10))/100 ))
-    salaire.horaire.setBrut({target: { value : montantBrutHeure}});
-
-  };
+  options["moisPrimeOpt"] =  {"12 mois":12 , "13 mois" : 13 , "14 mois" : 14 , "15 mois" : 15 , "16 mois" : 16};
+  let [workHour , setWorkHour] = useState(10);
+  let [tauxPrelevement , setTauxPrelevement] = useState(0);
 
   /* Modification de la formule de calcule selon l'entrée de l'utilisateur */
   return (
   <div className="App">
-
     <div className = "entree-salaire">
-      <span id="status-travailleur" >{valstatus}</span>
+      <span id="status-travailleur" > {valstatus}</span>
       <BrutVersNet salaire = {salaire} />
       <Status choixStatus = {choixStatus} setStatus={setStatus}/>
     </div>
-
     <div className = "options">
-      <Settings 
-          netApImpot ={netApImpot} 
-          salaire= {salaire} options={options}
-          workHour={workHour}
-          setWorkHour = {setWorkHour}
-          tauxPrelevement = {tauxPrelevement}
-          setTauxPrelevement={setTauxPrelevement}
-          modificationTauxHoraire = {modificationTauxHoraire}
-      />
+      <Settings salaire= {salaire} options={options} workHour={workHour} setWorkHour = {setWorkHour} tauxPrelevement = {tauxPrelevement} setTauxPrelevement={setTauxPrelevement}/>
     </div>
-
   </div>
   );
 
